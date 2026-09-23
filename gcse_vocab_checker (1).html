@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCSE RS — Vocabulary Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f2ed; --surface: #ffffff; --border: #e0dbd3; --border-hover: #b8b0a4;
+  --text: #1a1714; --text-muted: #6b6560; --accent: #3b2d8a; --accent-light: #eeecfb;
+  --accent-mid: #534AB7; --correct: #2a6644; --correct-bg: #edf7f1; --correct-border: #8ec9a8;
+  --wrong: #922b2b; --wrong-bg: #fdf0f0; --wrong-border: #e8a0a0;
+  --serif: 'DM Serif Display', Georgia, serif; --sans: 'DM Sans', system-ui, sans-serif;
+}
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; padding: 1.5rem 1rem 4rem; }
+
+header { max-width: 960px; margin: 0 auto 1.25rem; display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; }
+header h1 { font-family: var(--serif); font-size: 1.5rem; font-weight: 400; }
+header span { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+.picker-wrap { max-width: 960px; margin: 0 auto 1.25rem; }
+.picker-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.picker-row span { font-size: 13px; color: var(--text-muted); }
+.picker-row button { font-family: var(--sans); font-size: 12px; padding: 2px 10px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); color: var(--text-muted); cursor: pointer; transition: all 0.12s; }
+.picker-row button:hover { border-color: var(--border-hover); color: var(--text); }
+.topic-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { font-family: var(--sans); font-size: 13px; padding: 5px 13px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); color: var(--text-muted); cursor: pointer; transition: all 0.12s; user-select: none; }
+.chip:hover { border-color: var(--border-hover); color: var(--text); }
+.chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.modes { max-width: 960px; margin: 0 auto 1.5rem; display: flex; gap: 8px; flex-wrap: wrap; }
+.mode-btn { font-family: var(--sans); font-size: 13px; padding: 7px 16px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.mode-btn:hover { border-color: var(--border-hover); color: var(--text); }
+.mode-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+.wrapper { max-width: 960px; margin: 0 auto; }
+
+.scorebar { display: flex; gap: 8px; align-items: center; margin-left: auto; }
+.pill { font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 20px; border: 1px solid transparent; }
+.pill-correct { background: var(--correct-bg); color: var(--correct); border-color: var(--correct-border); }
+.pill-wrong { background: var(--wrong-bg); color: var(--wrong); border-color: var(--wrong-border); }
+.pill-remain { background: var(--accent-light); color: var(--accent); border-color: #a89fdc; }
+
+.btn { font-family: var(--sans); font-size: 13px; padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+.btn:hover { background: var(--bg); border-color: var(--border-hover); }
+.btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 500; }
+.btn.primary:hover { background: var(--accent-mid); border-color: var(--accent-mid); }
+
+.progress-wrap { height: 3px; background: var(--border); border-radius: 3px; overflow: hidden; margin: 1rem 0 0; }
+.progress-bar { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+
+.banner { display: none; margin-top: 1.5rem; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); text-align: center; }
+.banner h2 { font-family: var(--serif); font-size: 1.5rem; font-weight: 400; margin-bottom: 6px; }
+.banner p { font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; }
+
+/* MODE 1: MATCH */
+.match-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1rem; }
+.match-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 600px) { .match-grid { grid-template-columns: 1fr; } }
+.col-head { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
+.col { display: flex; flex-direction: column; gap: 7px; }
+.card { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; line-height: 1.55; color: var(--text); transition: border-color 0.12s, background 0.12s, transform 0.1s; user-select: none; }
+.card:hover:not(.correct):not(.locked) { border-color: var(--border-hover); transform: translateY(-1px); }
+.card.selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.card.correct { border-color: var(--correct-border); background: var(--correct-bg); color: var(--correct); cursor: default; }
+.card.locked { opacity: 0.3; cursor: default; }
+.card .unit-tag { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-weight: 500; letter-spacing: 0.04em; }
+.card.correct .unit-tag { color: var(--correct); opacity: 0.7; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+.shake { animation: shake 0.4s ease; border-color: var(--wrong-border) !important; background: var(--wrong-bg) !important; color: var(--wrong) !important; }
+.batch-label { font-size: 12px; color: var(--text-muted); margin-bottom: 0.75rem; }
+
+/* MODE 2: FLASHCARDS */
+.flash-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.flash-counter { font-size: 12px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+.flash-wrap { max-width: 580px; margin: 0 auto 1.5rem; perspective: 1200px; }
+.flash-inner { position: relative; width: 100%; min-height: 280px; transform-style: preserve-3d; transition: transform 0.45s cubic-bezier(0.4,0,0.2,1); cursor: pointer; }
+.flash-inner.flipped { transform: rotateY(180deg); }
+.flash-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; user-select: none; }
+.flash-face:hover { border-color: var(--border-hover); }
+.flash-back { transform: rotateY(180deg); background: var(--accent-light); border-color: #a89fdc; }
+.flash-unit { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--accent-mid); margin-bottom: 0.75rem; }
+.flash-term { font-family: var(--serif); font-size: 2rem; font-weight: 400; color: var(--text); line-height: 1.2; }
+.flash-hint { font-size: 12px; color: var(--text-muted); margin-top: 0.75rem; }
+.flash-back .flash-def { font-size: 1rem; color: #3C3489; line-height: 1.65; }
+.flash-back .flash-hint { color: #7F77DD; }
+.flash-nav { max-width: 580px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+.flash-done { display: none; max-width: 580px; margin: 1.5rem auto 0; text-align: center; padding: 2rem; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.flash-done h2 { font-family: var(--serif); font-size: 1.4rem; font-weight: 400; margin-bottom: 0.5rem; }
+.flash-done p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.slide-up { animation: slideUp 0.22s ease; }
+
+/* MODE 3: COMPLETE */
+.complete-card { max-width: 600px; margin: 0 auto 1.5rem; padding: 1.75rem 2rem; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); text-align: center; }
+.complete-card .prompt { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.75rem; }
+.complete-card .partial-def { font-size: 14px; line-height: 1.65; color: var(--text); margin-bottom: 0.5rem; }
+.options-grid { display: flex; flex-direction: column; gap: 8px; max-width: 600px; margin: 0 auto; }
+.option-btn { font-family: var(--sans); font-size: 13.5px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; text-align: left; line-height: 1.5; transition: all 0.12s; font-weight: 500; }
+.option-btn:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+.option-btn.correct { border-color: var(--correct-border); background: var(--correct-bg); color: var(--correct); }
+.option-btn.wrong { border-color: var(--wrong-border); background: var(--wrong-bg); color: var(--wrong); }
+.option-btn:disabled { cursor: default; }
+.complete-counter { text-align: center; font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; }
+.next-btn-wrap { text-align: center; margin-top: 1rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>GCSE RS — Vocabulary Checker</h1>
+  <span>OCR Religious Studies</span>
+</header>
+
+<div class="picker-wrap">
+  <div class="picker-row">
+    <span>Units:</span>
+    <button onclick="selectAll()">Select all</button>
+  </div>
+  <div class="topic-chips" id="chips"></div>
+</div>
+
+<div class="modes">
+  <button class="mode-btn active" onclick="setMode('match')">🔀 Round 1 — Match term to definition</button>
+  <button class="mode-btn" onclick="setMode('flash')">🃏 Round 2 — Flashcards</button>
+  <button class="mode-btn" onclick="setMode('complete')">✏️ Round 3 — Guess the term</button>
+</div>
+
+<div class="wrapper">
+  <!-- MODE 1 -->
+  <div id="mode-match">
+    <div class="match-controls">
+      <button class="btn" onclick="restartMatch()">New round</button>
+      <div class="scorebar">
+        <span class="pill pill-correct" id="m-correct">✓ 0</span>
+        <span class="pill pill-wrong" id="m-wrong">✗ 0</span>
+        <span class="pill pill-remain" id="m-remain">◈ 0 left</span>
+      </div>
+    </div>
+    <div class="batch-label" id="m-batch-label"></div>
+    <div class="match-grid">
+      <div><div class="col-head">Terms</div><div class="col" id="m-terms-col"></div></div>
+      <div><div class="col-head">Definitions</div><div class="col" id="m-defs-col"></div></div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="m-prog"></div></div>
+    <div class="banner" id="m-banner">
+      <h2 id="m-banner-title"></h2><p id="m-banner-msg"></p>
+      <button class="btn primary" onclick="restartMatch()" style="margin:0 auto">Play again</button>
+    </div>
+  </div>
+
+  <!-- MODE 2: FLASHCARDS -->
+  <div id="mode-flash" style="display:none">
+    <div class="flash-controls">
+      <button class="btn" onclick="restartFlash()">Reshuffle</button>
+      <span class="flash-counter" id="f-counter">— / —</span>
+    </div>
+    <div class="flash-wrap">
+      <div class="flash-inner" id="f-inner" onclick="flipFlash()">
+        <div class="flash-face">
+          <div class="flash-unit" id="f-unit"></div>
+          <div class="flash-term" id="f-term"></div>
+          <div class="flash-hint">Tap to reveal definition</div>
+        </div>
+        <div class="flash-face flash-back">
+          <div class="flash-def" id="f-def"></div>
+          <div class="flash-hint">Tap to flip back</div>
+        </div>
+      </div>
+    </div>
+    <div class="flash-nav">
+      <button class="btn" onclick="prevFlash()">← Previous</button>
+      <button class="btn primary" onclick="nextFlash()">Next →</button>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="f-prog"></div></div>
+    <div class="flash-done" id="f-done">
+      <h2>Deck complete!</h2>
+      <p id="f-done-sub"></p>
+      <button class="btn primary" onclick="restartFlash()" style="margin:0 auto;display:block;width:fit-content;">Reshuffle and go again</button>
+    </div>
+  </div>
+
+  <!-- MODE 3 -->
+  <div id="mode-complete" style="display:none">
+    <div class="complete-counter" id="c-counter"></div>
+    <div class="complete-card">
+      <div class="prompt">Which term matches this definition?</div>
+      <div class="partial-def" id="c-def"></div>
+    </div>
+    <div class="options-grid" id="c-options"></div>
+    <div class="next-btn-wrap"><button class="btn primary" id="c-next" onclick="nextComplete()" style="display:none">Next →</button></div>
+    <div class="progress-wrap"><div class="progress-bar" id="c-prog"></div></div>
+    <div class="banner" id="c-banner">
+      <h2 id="c-banner-title"></h2><p id="c-banner-msg"></p>
+      <button class="btn primary" onclick="restartComplete()" style="margin:0 auto">Play again</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+// All GCSE RS vocab data - written and ready to embed
+const DATA = {
+
+  "Christianity: Beliefs": [
+    { term: "Denomination", def: "A branch or tradition within Christianity, such as Catholic, Anglican, or Baptist, each with its own practices and beliefs." },
+    { term: "Monotheism", def: "The belief that there is only one God." },
+    { term: "Omnipotent", def: "All-powerful; the belief that God has unlimited power and can do anything." },
+    { term: "Omnipresent", def: "Present everywhere at all times; a quality attributed to God." },
+    { term: "Omniscient", def: "All-knowing; the belief that God has complete knowledge of everything, including the past, present, and future." },
+    { term: "Omnibenevolent", def: "All-loving and all-good; the belief that God is perfectly good and loving towards all creation." },
+    { term: "Immanent", def: "The idea that God is present and active within the world and in human life." },
+    { term: "Transcendent", def: "The idea that God exists beyond and outside of the physical world and human understanding." },
+    { term: "Perfect Good", def: "The idea that God is completely and utterly good, without any moral flaw or imperfection." },
+    { term: "Impersonal", def: "The idea that God is a force or power rather than a being with whom humans can have a personal relationship." },
+    { term: "Personal", def: "The idea that God is a being who can be known and who relates directly to individual people." },
+    { term: "Eternal", def: "Existing outside of time, without beginning or end; a quality attributed to God." },
+    { term: "Judge", def: "The idea that God will assess the lives and actions of all people, particularly after death." },
+    { term: "Trinity", def: "The Christian belief that God exists as three persons in one: Father, Son, and Holy Spirit." },
+    { term: "Problem of evil", def: "The challenge to belief in God that asks how an all-powerful, all-knowing, all-loving God can allow evil and suffering to exist." },
+    { term: "Inconsistent triad", def: "The argument that God cannot be omnipotent, omnibenevolent, and allow evil to exist — at least one of the three must be false." },
+    { term: "Atheism / atheist", def: "The belief that God does not exist; an atheist is a person who holds this view." },
+    { term: "Natural evil", def: "Suffering caused by natural events such as earthquakes, floods, or disease, rather than by human actions." },
+    { term: "Moral evil", def: "Suffering caused by the free choices and actions of human beings, such as murder, war, or cruelty." },
+    { term: "Theodicy", def: "An attempt to explain why God allows evil and suffering to exist despite being all-powerful and all-loving." },
+    { term: '"Soul-making" theodicy', def: "Irenaeus' argument that evil and suffering exist so that humans can grow morally and spiritually, developing their souls towards perfection." },
+    { term: "The Fall", def: "The biblical account in Genesis of Adam and Eve disobeying God by eating the forbidden fruit, resulting in sin entering the world." },
+    { term: "Fundamentalist / literalist", def: "A Christian who believes the Bible is literally true in all its details, including accounts of creation." },
+    { term: "Creationism", def: "The belief that God created the universe and all life exactly as described in the Bible, rejecting scientific theories such as evolution." },
+    { term: "Inerrant", def: "Without error; the belief that the Bible is completely accurate and free from mistakes in all matters." },
+    { term: 'The "Word" of God', def: "The belief that the Bible is the authoritative message of God to humanity, either directly dictated or divinely inspired." },
+    { term: "Logos", def: "A Greek term meaning 'word' or 'reason'; used in John's Gospel to describe Jesus as the eternal Word of God made flesh." },
+    { term: "Judgement", def: "The belief that after death, God will assess the lives of all people and decide their eternal fate." },
+    { term: "Purgatory", def: "In Catholic belief, a state of purification after death where souls are cleansed of sin before entering heaven." },
+    { term: "Heaven", def: "The belief in a state of eternal life and closeness to God after death, experienced by those who are saved." },
+    { term: "Hell", def: "The belief in a state of eternal separation from God after death, experienced by those who are not saved." },
+    { term: "Embodied life after death", def: "The belief that people will be resurrected with a physical body after death, as reflected in the Christian belief in resurrection." },
+    { term: "Disembodied life after death", def: "The belief that only the soul, rather than the body, continues to exist after death." },
+    { term: "Parable of the sheep & goats", def: "A teaching of Jesus in which people are judged by how they treated others — the 'sheep' who showed kindness enter heaven, the 'goats' who did not face punishment." },
+    { term: "Salvation", def: "Being saved; the Christian belief that through Jesus' death and resurrection, humans can be forgiven and receive eternal life." },
+    { term: "Salvation by merit", def: "The idea that salvation can be earned through good works and living a moral life." },
+    { term: "Salvation by grace", def: "The belief, particularly in Protestantism, that salvation is a free gift from God that cannot be earned but is received through faith." },
+    { term: "Salvation by law", def: "The idea that following God's commandments and religious laws leads to salvation." },
+    { term: "Salvation by spirit", def: "The belief that the Holy Spirit works within a person to bring about salvation and spiritual transformation." },
+    { term: "The Nativity", def: "The birth of Jesus, as described in the Gospels of Matthew and Luke." },
+    { term: "The Incarnation", def: "The belief that God became fully human in the person of Jesus Christ, while remaining fully God." },
+    { term: "Palm Sunday", def: "The Sunday before Easter, marking Jesus' entry into Jerusalem on a donkey, welcomed by crowds waving palm branches." },
+    { term: "Maundy Thursday", def: "The Thursday before Easter, commemorating the Last Supper and Jesus washing the disciples' feet." },
+    { term: "Last Supper", def: "The final meal Jesus shared with his disciples before his crucifixion, at which he instituted the Eucharist." },
+    { term: "Garden of Gethsemane", def: "The garden where Jesus prayed the night before his arrest and crucifixion, expressing his anguish but submitting to God's will." },
+    { term: "The Crucifixion", def: "The execution of Jesus by being nailed to a cross; Christians believe this was an act of self-sacrifice that brought about salvation." },
+    { term: "Good Friday", def: "The Friday before Easter, commemorating the crucifixion and death of Jesus." },
+    { term: "Atonement", def: "Making amends for wrongdoing; the Christian belief that Jesus' death on the cross reconciled humanity with God by paying the price for sin." },
+    { term: "Sin", def: "Any thought, word, or action that goes against God's will and separates humans from God." },
+    { term: "Original Sin", def: "The belief that all humans inherit a sinful nature as a result of Adam and Eve's disobedience in the Garden of Eden." },
+    { term: "Repentance", def: "Sincerely feeling sorry for sin, turning away from it, and seeking God's forgiveness." },
+    { term: "Easter Sunday", def: "The most important Christian celebration, marking the resurrection of Jesus from the dead." },
+    { term: "Resurrection", def: "The Christian belief that Jesus rose bodily from the dead three days after his crucifixion, and that believers will also rise after death." },
+    { term: "Ascension", def: "The belief that, forty days after his resurrection, Jesus was taken up bodily into heaven in the presence of his disciples." },
+  ],
+
+  "Christianity: Practices": [
+    { term: "Worship", def: "Showing adoration and reverence; offering praise to God." },
+    { term: "Private worship", def: "A believer giving God praise and worship on their own." },
+    { term: "Public worship", def: "Worship performed by a group of believers, often in a church." },
+    { term: "Liturgical worship", def: "A church service which follows a set structure or ritual." },
+    { term: "Non-liturgical / informal worship", def: "A service which does not follow a set text or ritual; sometimes spontaneous or charismatic." },
+    { term: "Prayer", def: "Communicating with God through words of praise, thanksgiving, or confession, or requests for his help or guidance; listening to and speaking to God." },
+    { term: "Informal prayer", def: "Spontaneous prayers spoken from the heart which are personal and unique to the person at the time." },
+    { term: "Set prayers", def: "Prayers written throughout the centuries which many Christians worldwide use, such as the Lord's Prayer." },
+    { term: "Lord's Prayer", def: "The prayer taught to the disciples by Jesus; widely said by Christians in both church services and privately." },
+    { term: "Bible", def: "Source of wisdom and authority; a holy book containing both the Old and New Testaments." },
+    { term: "Confessional prayer", def: "A prayer in which a person acknowledges their sins and asks for forgiveness from God." },
+    { term: "Thanksgiving", def: "A form of prayer expressing gratitude to God for his blessings and guidance." },
+    { term: "Sacrament", def: "The outward and visible sign of an invisible and spiritual grace; Baptism and the Eucharist are recognised as sacraments by most Christians." },
+    { term: "Baptism", def: "The sacrament through which people become members of the Church, involving water as a symbol of the washing away of sin." },
+    { term: "Infant baptism", def: "The sacrament of initiation of babies and young children into the Church." },
+    { term: "Believers' baptism", def: "Initiation into the Church, by immersion in water, of people old enough to understand the ceremony and who have made the decision to live a Christian life." },
+    { term: "Original Sin", def: "The belief that all humans inherit a sinful nature due to the disobedience of Adam and Eve in the Garden of Eden." },
+    { term: "Font", def: "A basin or container used for holding water in baptismal ceremonies." },
+    { term: "Eucharist / Holy Communion", def: "The sacrament in which the death and resurrection of Jesus are celebrated, using bread and wine." },
+    { term: "Transubstantiation", def: "The Roman Catholic belief that during the Eucharist, the bread and wine become the actual body and blood of Christ while retaining their outward appearance." },
+    { term: "Christmas", def: "The festival and celebration to remember the birth of Jesus." },
+    { term: "The Nativity", def: "The birth of Jesus, as described in the Gospels of Matthew and Luke." },
+    { term: "Incarnation", def: "The belief that God took human form in Jesus." },
+    { term: "Advent", def: "The period of preparation for the celebration of the birth of Jesus at Christmas." },
+    { term: "Easter", def: "The festival and celebration of the resurrection of Jesus." },
+    { term: "Crucifixion", def: "The death of Jesus; a form of execution used by the Romans." },
+    { term: "Atonement", def: "Making amends for a wrong; the belief that reconciliation between God and humanity was brought about by the death of Jesus as a sacrifice." },
+    { term: "Salvation", def: "Being saved; the belief that through God's grace and Jesus' death and resurrection, humanity can be saved and enter eternal life in heaven." },
+    { term: "Lent", def: "A period of forty days leading up to Easter, during which Christians fast, pray, give, and reflect on Jesus' suffering." },
+    { term: "Ash Wednesday", def: "The first day of Lent, marked by services of repentance and the placing of ashes on the forehead." },
+    { term: "Holy Week", def: "The week leading up to Easter, remembering the events of Jesus' final days, including his crucifixion." },
+    { term: "Repentance", def: "Sincerely regretting and turning away from sin, seeking God's forgiveness." },
+    { term: "Paschal candle", def: "A large candle lit during Easter to symbolise the light of Jesus and his resurrection." },
+    { term: "The Church", def: "The community of Christian believers, or the building in which Christians worship." },
+    { term: "Pilgrimage", def: "A religious journey to a holy or sacred site, undertaken as an act of worship and devotion." },
+    { term: "Lourdes", def: "A place of pilgrimage in France where the Virgin Mary appeared to St Bernadette; it is claimed that miraculous healings have taken place there." },
+    { term: "Iona", def: "A Scottish island and place of pilgrimage founded by St Columba; a centre of Christian community and prayer." },
+    { term: "Mission", def: "The duty of Christians to spread the gospel — the good news about Jesus — to the world." },
+    { term: "Evangelism", def: "Preaching the gospel to convert people to the Christian faith." },
+    { term: "Missionary work", def: "The practice of spreading Christianity, often in other countries, through preaching and humanitarian aid." },
+    { term: "Conversion", def: "A process of changing religious belief, often referring to a person choosing to become a Christian." },
+    { term: "The Great Commission", def: "Jesus' command to his disciples to spread his teachings to all nations." },
+    { term: "Reconciliation", def: "Making up and rebuilding relationships after disagreement; also a sacrament in some churches involving confession and forgiveness." },
+    { term: "Street Pastors", def: "A Christian organisation in which volunteers work on city streets, often at night, offering practical care to those in need." },
+    { term: "Food bank", def: "A place where people in need can collect food; often run or supported by local churches and religious charities." },
+    { term: "Agape", def: "Selfless, unconditional love; often associated with the love of God for humanity and with Christian charitable acts." },
+    { term: "Persecution", def: "Facing hostility and ill-treatment; some Christians face punishment and death for practising their faith." },
+    { term: "Suffering", def: "Undergoing pain and hardship; understood in Christianity as a consequence of evil in the world." },
+    { term: "Christian Aid / Tearfund", def: "Christian charities that provide emergency and long-term aid to people in the developing world." },
+    { term: "CAFOD", def: "The Catholic Agency for Overseas Development; a Christian charity that provides emergency and long-term aid to the developing world." },
+  ],
+
+  "Hinduism: Beliefs": [
+    { term: "Indus civilisation", def: "One of the world's earliest civilisations, from which Hinduism is believed to have developed; it flourished in the Indus Valley around 2500 BCE." },
+    { term: "River Ganges", def: "A sacred river in India considered holy by Hindus; bathing in it is believed to purify the soul." },
+    { term: "Shruti texts", def: "Sacred Hindu scriptures believed to have been 'heard' or revealed directly by God, including the Vedas and Upanishads." },
+    { term: "Smriti texts", def: "Hindu scriptures that were 'remembered' and passed down by sages; they include the epics like the Mahabharata and Ramayana." },
+    { term: "Brahman", def: "The ultimate reality or supreme power in Hinduism; the eternal, unchanging force that underlies all existence." },
+    { term: "Aum symbol", def: "A sacred symbol and sound in Hinduism representing Brahman and the essence of the universe; often chanted in worship and meditation." },
+    { term: "Monotheism", def: "The belief in one God; some Hindus interpret their faith as monotheistic, seeing all deities as expressions of the one Brahman." },
+    { term: "Nirguna-Brahman", def: "The understanding of Brahman as without qualities or form — an abstract, impersonal ultimate reality beyond human description." },
+    { term: "Saguna-Brahman", def: "The understanding of Brahman as having qualities and being able to take personal form, allowing for devotional worship." },
+    { term: "Deities", def: "Gods and goddesses; Hinduism has many deities, each representing different aspects or qualities of the one ultimate reality, Brahman." },
+    { term: "Bhagavan", def: "A Sanskrit term meaning 'Lord' or 'God'; used to refer to the personal God in Hindu devotion." },
+    { term: "Antaryami", def: "The belief that God dwells within every living being as the inner controller or witness." },
+    { term: "Ganesha", def: "The elephant-headed deity associated with wisdom, new beginnings, and the removal of obstacles; one of the most widely worshipped Hindu deities." },
+    { term: "Hanuman", def: "A devoted monkey god representing loyalty, strength, and selfless service; a key figure in the Ramayana." },
+    { term: "Parvati", def: "The goddess of love, fertility, and devotion; wife of Shiva and mother of Ganesha." },
+    { term: "Saraswati", def: "The goddess of knowledge, wisdom, learning, and the arts." },
+    { term: "Lakshmi", def: "The goddess of wealth, fortune, and prosperity; wife of Vishnu." },
+    { term: "The Trimurti", def: "The three principal forms of God in Hinduism: Brahma (creator), Vishnu (preserver), and Shiva (destroyer)." },
+    { term: "Brahma", def: "The creator god in Hinduism; one of the three gods of the Trimurti." },
+    { term: "Shiva", def: "The destroyer and transformer in the Trimurti; also associated with meditation, yoga, and the cycle of life and death." },
+    { term: "Maya", def: "The idea that the physical world is an illusion that distracts the soul from recognising its true nature as part of Brahman." },
+    { term: "Ascetic", def: "A person who practises extreme self-discipline and abstains from worldly pleasures for spiritual purposes." },
+    { term: "Shaivism", def: "A major tradition within Hinduism that regards Shiva as the supreme deity." },
+    { term: "Vishnu", def: "The preserver god in the Trimurti; associated with maintaining the order of the universe and appearing on earth as avatars when needed." },
+    { term: "Vaishnavism", def: "A major tradition within Hinduism that regards Vishnu as the supreme deity." },
+    { term: "Avatar", def: "A physical incarnation or form taken on earth by a deity, especially Vishnu, such as Rama or Krishna." },
+    { term: "Dharma", def: "Moral duty, right conduct, and the order of the universe; living according to dharma is central to Hindu life." },
+    { term: "Adharma", def: "Actions or ways of living that go against dharma; unrighteousness or moral disorder." },
+    { term: "Rama", def: "An avatar of Vishnu and the hero of the Ramayana; revered as a model of virtue, duty, and righteous leadership." },
+    { term: "The Ramayana", def: "A sacred Hindu epic telling the story of Rama, his wife Sita, and the battle against the demon king Ravana; one of Hinduism's most important texts." },
+    { term: "Ravana", def: "The demon king in the Ramayana who abducts Sita; his defeat by Rama represents the victory of good over evil." },
+    { term: "Sita", def: "Wife of Rama in the Ramayana; revered as a model of devotion, purity, and faithfulness." },
+    { term: "Krishna", def: "An avatar of Vishnu; a major deity in Hinduism associated with love, wisdom, and divine joy; speaker of the Bhagavad Gita." },
+    { term: "The Kurukshetra War", def: "The great battle described in the Mahabharata between two families; the setting for the Bhagavad Gita, in which Krishna teaches Arjuna about duty and the nature of the soul." },
+    { term: "The 4 aims of life", def: "The four goals that guide a Hindu life: Dharma (duty), Artha (wealth), Kama (pleasure), and Moksha (liberation)." },
+    { term: "Artha", def: "One of the four aims of Hindu life; the pursuit of wealth, prosperity, and material well-being, achieved through honest means." },
+    { term: "Kama", def: "One of the four aims of Hindu life; the pursuit of pleasure, love, and sensory enjoyment in a balanced way." },
+    { term: "Moksha", def: "Liberation from the cycle of death and rebirth (samsara); the ultimate spiritual goal in Hinduism, achieved through union with Brahman." },
+    { term: "Sanatana dharma", def: "Meaning 'eternal duty' or 'eternal truth'; a name many Hindus use to describe their religion, emphasising its timeless nature." },
+    { term: "Varnashrama dharma", def: "The system of duties based on a person's varna (social group) and ashrama (stage of life)." },
+    { term: "Varna", def: "The four social groupings in Hindu society: Brahmin (priests), Kshatriya (warriors), Vaishya (merchants), and Shudra (servants)." },
+    { term: "Free will", def: "The ability of humans to make their own moral choices; in Hinduism, free will determines the karma a person generates." },
+    { term: "The 6 personal virtues", def: "A set of virtues in Hindu thought including non-violence, truthfulness, and self-control, which guide moral and spiritual life." },
+    { term: "Ahimsa", def: "Non-violence; the principle of not causing harm to any living being, central to Hindu, Jain, and Buddhist ethics." },
+    { term: "Atman", def: "The individual soul or self; in Hindu belief, the eternal essence of a person, which is ultimately identical to Brahman." },
+    { term: "Transmigration / Samsara cycle", def: "The continuous cycle of death and rebirth that the soul goes through until it achieves moksha." },
+    { term: "The law of karma", def: "The moral law of cause and effect; good actions lead to positive consequences in future lives, bad actions to negative ones." },
+    { term: "Reincarnation / rebirth", def: "The belief that after death, the soul is reborn in a new body; the form of the new life is determined by karma." },
+    { term: "Punya", def: "Merit or good karma accumulated through righteous actions, worship, and devotion." },
+    { term: "Papa", def: "Demerit or bad karma accumulated through harmful or immoral actions." },
+    { term: "Prakriti", def: "The material world; the physical universe and everything in it, as distinct from the spiritual soul (purusa)." },
+    { term: "Purusa", def: "The eternal spiritual self or consciousness; in some Hindu thought, the divine principle that animates all living beings." },
+    { term: "Jiva", def: "An individual living being or soul, currently bound within the cycle of samsara." },
+    { term: "Cosmology", def: "The study of the origin, nature, and structure of the universe; in Hinduism, the cosmos is understood as cyclical and vast." },
+    { term: "The cycle of 4 ages", def: "The Hindu belief that time moves in repeating cycles of four ages (yugas), each becoming progressively more corrupt." },
+    { term: "Yuga", def: "An age or era in Hindu cosmology; the four yugas together form one complete cycle of time." },
+    { term: "Golden yuga", def: "The first and most virtuous age in the Hindu cycle, also called Satya Yuga, in which dharma is fully upheld." },
+    { term: "Silver yuga", def: "The second age in the Hindu cycle, also called Treta Yuga, in which virtue begins to decline slightly." },
+    { term: "Copper yuga", def: "The third age in the Hindu cycle, also called Dvapara Yuga, in which dharma has declined significantly and conflict increases." },
+    { term: "Iron yuga", def: "The current age in the Hindu cycle, also called Kali Yuga, in which dharma is at its lowest and moral decline is widespread." },
+    { term: "Kalki", def: "The future avatar of Vishnu who, according to Hindu belief, will appear at the end of the current Kali Yuga to restore dharma and begin a new cycle." },
+    { term: "Tri-guna", def: "The three qualities or forces that make up all matter in Hindu thought: Sattva (purity), Rajas (activity), and Tamas (inertia)." },
+  ],
+
+  "Hinduism: Practices": [
+    { term: "Puja", def: "A form of Hindu worship involving prayers, offerings, and rituals performed before a deity, either at home or in a temple." },
+    { term: "Bhakti", def: "Devotional love and worship directed towards a personal deity; one of the main paths to moksha in Hinduism." },
+    { term: "Murti", def: "A statue or image of a deity used as a focus for worship in Hindu practice; it is understood to embody the divine presence." },
+    { term: "Shrine", def: "A sacred space, often in the home, where a Hindu places images of deities and performs daily worship." },
+    { term: "Mandir", def: "A Hindu temple; a sacred building where deities are housed and worshippers come to perform puja." },
+    { term: "Arati ceremony", def: "A Hindu ritual in which a flame is waved before a deity as an act of worship and to symbolise the light of God." },
+    { term: "Havan ceremony", def: "A Hindu fire ritual in which offerings such as ghee and grains are made into a sacred fire, accompanied by Vedic chanting." },
+    { term: "Darshan", def: "The act of 'seeing' and being seen by the deity; visiting a temple or sacred image to receive the blessing of the divine gaze." },
+    { term: "Japa / Mantra", def: "The repetition of a sacred word, name, or phrase (mantra) as a form of meditation and devotion." },
+    { term: "Bhajan / Kirtan", def: "Devotional songs (bhajan) or call-and-response chanting (kirtan) performed as a form of worship." },
+    { term: "Guru", def: "A spiritual teacher or guide who passes on religious knowledge and helps a student on their spiritual path." },
+    { term: "Ashram", def: "A spiritual community or retreat where people live, study, and practise their faith under the guidance of a guru." },
+    { term: "Sadhu", def: "A Hindu holy man who has renounced worldly life to pursue spiritual goals through austerity and meditation." },
+    { term: "Sannyasin", def: "A person in the final stage of the Hindu ashrama system who has renounced the world to focus entirely on spiritual liberation." },
+    { term: "Swami", def: "A title of respect given to a Hindu religious teacher or spiritual leader, particularly one who has taken vows of renunciation." },
+    { term: "Pilgrimage", def: "A journey to a sacred place undertaken for religious purposes; an important act of devotion in Hinduism." },
+    { term: "Pilgrim", def: "A person who undertakes a pilgrimage to a holy place." },
+    { term: "Circumambulation", def: "The act of walking clockwise around a sacred object, shrine, or temple as an act of worship." },
+    { term: "Celibacy", def: "Abstaining from sexual activity, often as part of a religious vow in pursuit of spiritual goals." },
+    { term: "Penance", def: "An act of self-punishment or devotion undertaken to make amends for wrongdoing or to show dedication to God." },
+    { term: "Varanasi", def: "One of the holiest cities in Hinduism, situated on the banks of the Ganges; a major pilgrimage site and place of cremation." },
+    { term: "Ghat", def: "A series of steps leading down to a sacred river, used for bathing, cremation, and religious rituals." },
+    { term: "Kumbh Mela", def: "A major Hindu pilgrimage and festival held at sacred rivers, attended by millions of pilgrims; the largest religious gathering in the world." },
+    { term: "Haridwar", def: "A holy city on the banks of the Ganges and one of the four sites of the Kumbh Mela pilgrimage." },
+    { term: "Ujjain", def: "A sacred city in central India and one of the four sites of the Kumbh Mela pilgrimage." },
+    { term: "Nashik", def: "A city in Maharashtra and one of the four sites of the Kumbh Mela pilgrimage." },
+    { term: "Prayaga", def: "A sacred site at the confluence of the Ganges, Yamuna, and mythical Saraswati rivers; a major site of the Kumbh Mela." },
+    { term: "River Ganges", def: "A sacred river in India considered holy by Hindus; bathing in its waters is believed to cleanse sins and purify the soul." },
+    { term: "Himalayas", def: "A sacred mountain range in India, associated with gods and regarded as the home of Shiva; a destination for Hindu pilgrims." },
+    { term: "Yoga", def: "A physical, mental, and spiritual discipline in Hinduism aimed at achieving union with Brahman and spiritual liberation." },
+    { term: "Karma yoga", def: "The path of selfless action; achieving moksha through performing one's duties without attachment to results." },
+    { term: "Astanga yoga", def: "A form of yoga involving eight limbs or stages of practice, including ethical conduct, physical postures, and meditation." },
+    { term: "Bhakti yoga", def: "The path of devotion; achieving moksha through love and worship of a personal deity." },
+    { term: "Jnana yoga", def: "The path of knowledge; achieving moksha through study, wisdom, and understanding the true nature of reality." },
+    { term: "Moksha", def: "Liberation from the cycle of death and rebirth; the ultimate spiritual goal in Hinduism." },
+    { term: "Festival", def: "A religious celebration marking an important event or deity; Hindu festivals often involve worship, fasting, and community gathering." },
+    { term: "Diwali", def: "The Festival of Lights; a major Hindu festival celebrating the return of Rama and Sita, the victory of light over darkness, and the goddess Lakshmi." },
+    { term: "Rama and Sita", def: "The divine couple at the centre of the Ramayana; their story represents devotion, righteousness, and the triumph of good over evil." },
+    { term: "Dharma", def: "Moral duty and right living; at Diwali, the celebration of Rama's return is a celebration of dharma being restored." },
+    { term: "Adharma", def: "The opposite of dharma; unrighteousness or immoral behaviour, represented by the demon king Ravana in the Diwali story." },
+    { term: "Diwa lamps", def: "Small clay oil lamps lit during Diwali to symbolise the light of God and the triumph of good over evil." },
+    { term: "Lakshmi", def: "The goddess of wealth and prosperity; worshipped during Diwali as Hindus invite her blessings into their homes." },
+    { term: "Rangoli patterns", def: "Colourful decorative patterns made on floors during festivals such as Diwali, used to welcome deities and bring good fortune." },
+    { term: "Holi", def: "The Festival of Colours; a spring festival celebrating the victory of good over evil and the story of Prahlada and Holika." },
+    { term: "Prahlada", def: "A young devotee of Vishnu in the story of Holi who survived his aunt Holika's attempt to kill him because of his devotion to God." },
+    { term: "Narasimha", def: "An avatar of Vishnu who appeared to protect Prahlada and destroy the demon Hiranyakashipu." },
+    { term: "Holika", def: "The demon aunt of Prahlada who tried to burn him alive but was herself destroyed; her defeat is celebrated at Holi." },
+    { term: "Krishna", def: "An avatar of Vishnu celebrated joyfully during Holi, associated with the playful throwing of coloured powders." },
+    { term: "Kama", def: "The pursuit of pleasure and love; one of the four aims of Hindu life, celebrated in a balanced way at festivals like Holi." },
+    { term: "Ahimsa", def: "Non-violence; the principle of not harming any living being, which influences Hindu attitudes to the environment and other ethical issues." },
+    { term: "Stewardship", def: "The responsibility to care for and manage the natural world on behalf of God; Hindus believe humans are caretakers of the earth." },
+    { term: "Sustainability", def: "Using natural resources in a way that meets current needs without damaging the ability of future generations to meet theirs." },
+    { term: "Banyan tree", def: "A sacred tree in Hinduism associated with Vishnu; regarded as a symbol of eternal life and used as a place for meditation." },
+    { term: "Langur monkey", def: "A species of monkey considered sacred in Hinduism due to its association with Hanuman; often protected near temples." },
+    { term: "Goshalla", def: "A shelter for cows; because cows are sacred in Hinduism, many Hindus support goshallahs as an act of religious duty." },
+    { term: "Tree hugging", def: "A form of environmental protest with Hindu roots; the Chipko movement in India saw people embrace trees to prevent deforestation." },
+    { term: "Vrindavan Forest project", def: "An environmental initiative in India inspired by Hindu values, restoring sacred forests associated with Krishna." },
+    { term: "Social justice", def: "The fair and equal treatment of all people in society; many Hindus see working for social justice as part of their dharma." },
+    { term: "Inclusion", def: "Ensuring all people are welcomed and treated equally regardless of background; an expression of the Hindu belief in the divine in all living beings." },
+    { term: "Dana", def: "Charitable giving; the practice of donating money, food, or goods to those in need as an act of religious duty." },
+    { term: "Sewa", def: "Selfless service; performing acts of service to others without expectation of reward, as an expression of devotion to God." },
+    { term: "Sewa International", def: "A Hindu charity providing disaster relief and development aid around the world, inspired by the principle of sewa." },
+    { term: "ISKCON Food for Life", def: "The food relief programme of the International Society for Krishna Consciousness (Hare Krishna), providing free vegetarian meals to people in need worldwide." },
+  ],
+
+  "Theme B: Religion and Life": [
+    { term: "Creationism", def: "The belief that God created the universe and all life exactly as described in the Bible, rejecting evolutionary science." },
+    { term: "Genesis", def: "The first book of the Bible, which contains two accounts of creation; a key text in debates about the origins of life." },
+    { term: "Dominion", def: "The authority given to humans over nature, as described in Genesis 1; interpreted by some as a right to use the earth and by others as a duty to care for it." },
+    { term: "Stewardship", def: "The responsibility of humans to care for the earth on God's behalf; many religious believers see environmental care as a religious duty." },
+    { term: "Fundamentalist / literalist interpretation", def: "Reading a religious text as literally and historically true in every detail, including the creation accounts in Genesis." },
+    { term: "Liberal interpretation", def: "Reading religious texts as containing spiritual truths expressed through non-literal language, allowing compatibility with science." },
+    { term: "Big Bang Theory", def: "The scientific theory that the universe began around 13.8 billion years ago from an extremely hot, dense point that rapidly expanded." },
+    { term: "Red shift", def: "The observation that light from distant galaxies is shifted towards the red end of the spectrum, providing evidence that the universe is expanding and supports the Big Bang." },
+    { term: "CMBR", def: "Cosmic Microwave Background Radiation; low-level radiation spread uniformly across the universe, considered strong evidence for the Big Bang." },
+    { term: "Evolution", def: "The scientific theory that all living things developed over billions of years through a process of natural selection, as proposed by Charles Darwin." },
+    { term: "Natural selection", def: "The process by which organisms with traits better suited to their environment survive and reproduce, driving evolutionary change." },
+    { term: "Awe and wonder", def: "A sense of reverence and amazement at the world; many religious believers see this as a natural response to God's creation." },
+    { term: "Environment", def: "The natural world, including living organisms and their physical surroundings; a concern for many religious and non-religious people." },
+    { term: "Environmental ethics", def: "A branch of ethics concerned with how humans should behave towards the natural world." },
+    { term: "Natural resources", def: "Materials found in nature that humans use, such as water, forests, and fossil fuels." },
+    { term: "Environmental abuse", def: "The misuse or destruction of the natural environment through pollution, deforestation, and other harmful activities." },
+    { term: "Pollution", def: "The contamination of the environment through harmful substances released into the air, water, or soil." },
+    { term: "Sustainable development", def: "Developing the world's resources in a way that meets current needs without damaging the environment for future generations." },
+    { term: "Fossil fuels", def: "Non-renewable energy sources such as coal, oil, and gas formed from ancient organic matter; burning them contributes to global warming." },
+    { term: "Renewable energy", def: "Energy from naturally replenished sources such as solar, wind, and hydroelectric power, considered more sustainable than fossil fuels." },
+    { term: "Global warming", def: "The gradual rise in the earth's average temperature, primarily caused by human activity releasing greenhouse gases." },
+    { term: "Deforestation", def: "The large-scale cutting down of forests, which destroys habitats, reduces biodiversity, and contributes to climate change." },
+    { term: "Animal ethics", def: "The study of the moral relationship between humans and animals, including questions about animal rights and welfare." },
+    { term: "Animal experimentation", def: "The use of animals to test products or medical treatments; debated on grounds of necessity, animal rights, and alternatives." },
+    { term: "Vegetarianism", def: "A diet that excludes meat; adopted by some religious believers as an expression of compassion for animals and stewardship of the earth." },
+    { term: "Veganism", def: "A lifestyle that excludes all animal products; adopted by some on ethical grounds relating to animal welfare and the environment." },
+    { term: "Agape", def: "Selfless, unconditional love; a Christian principle that influences attitudes to caring for others and the world." },
+    { term: "Sanctity of life", def: "The belief that all human life is sacred and has special value because it is created by God; used in debates about abortion and euthanasia." },
+    { term: "Quality of life", def: "The idea that what matters is not just being alive but living a life with meaning, dignity, and well-being; used in debates about euthanasia." },
+    { term: "Autonomy", def: "The right of individuals to make their own decisions about their lives; used in ethical debates about abortion and euthanasia." },
+    { term: "Paternalism", def: "The idea that authority figures should make decisions to protect people, even against their own wishes; the opposite of autonomy." },
+    { term: "Abortion", def: "The deliberate ending of a pregnancy before the foetus is able to survive independently; legal in the UK up to 24 weeks in most circumstances." },
+    { term: "Conception", def: "The moment a sperm fertilises an egg; some religious traditions believe human life and personhood begin at conception." },
+    { term: "Viability", def: "The point at which a foetus could survive outside the womb, generally considered to be around 24 weeks; relevant to legal limits on abortion." },
+    { term: "Pro-choice", def: "The view that women should have the right to decide whether to continue or end a pregnancy." },
+    { term: "Pro-life", def: "The view that life begins at conception and that abortion is therefore morally wrong." },
+    { term: "Personhood", def: "The status of being a person with full moral rights; central to debates about when life deserving protection begins." },
+    { term: "Euthanasia", def: "The deliberate ending of a person's life to relieve their suffering; currently illegal in the UK." },
+    { term: "Active euthanasia", def: "Directly causing the death of a person, for example through a lethal injection." },
+    { term: "Passive euthanasia", def: "Allowing a person to die by withdrawing or withholding medical treatment." },
+    { term: "Voluntary euthanasia", def: "Euthanasia carried out at the request of the person who wishes to die." },
+    { term: "Non-voluntary euthanasia", def: "Euthanasia carried out when the person is unable to give consent, for example if they are in a coma." },
+    { term: "The Assisted Dying Bill", def: "A proposed law in the UK that would allow terminally ill people to be helped to end their lives; the subject of ongoing debate." },
+    { term: "Hospices", def: "Specialist care centres providing medical and emotional support for people who are dying, focusing on comfort and dignity." },
+    { term: "Afterlife", def: "Belief in life after death; different religious traditions have different beliefs about what happens to a person after they die." },
+    { term: "Soul", def: "The spiritual or non-physical part of a person; many religious traditions believe the soul survives death." },
+    { term: "Immortality", def: "Living forever; the belief that the soul does not die but continues to exist after the death of the physical body." },
+    { term: "Dualism", def: "The belief that humans are made of two separate parts — body and soul — and that the soul can exist independently of the body." },
+    { term: "Monism", def: "The belief that humans are made of one substance only, meaning that the body and soul cannot be separated." },
+    { term: "Resurrection", def: "The belief that after death, a person's body will be raised to life; a central Christian belief, based on the resurrection of Jesus." },
+    { term: "Heaven", def: "The belief in a state of eternal life and closeness to God after death." },
+    { term: "Purgatory", def: "In Catholic belief, a state of purification after death before entering heaven." },
+    { term: "Hell", def: "The belief in a state of eternal separation from God and suffering after death." },
+    { term: "Judgement", def: "The belief that God will assess the lives and actions of all people after death." },
+    { term: "Humanism", def: "A non-religious worldview that emphasises reason, ethics, and human potential; humanists reject supernatural beliefs and base morality on human experience." },
+  ],
+
+  "Theme C: Existence of God and Revelation": [
+    { term: "Theist", def: "A person who believes in the existence of God or gods." },
+    { term: "Atheist", def: "A person who does not believe in the existence of God or gods." },
+    { term: "Teleological argument", def: "An argument for the existence of God based on the apparent design and purpose in the natural world." },
+    { term: "Qua regularity", def: "The version of the teleological argument based on the regular laws and patterns of the universe, which suggest an intelligent designer." },
+    { term: "Qua purpose", def: "The version of the teleological argument based on the apparent purpose of natural objects and organisms, pointing to a designer God." },
+    { term: "Fibonacci sequence", def: "A mathematical sequence found throughout nature (e.g. in flowers and shells) used as evidence for design in the teleological argument." },
+    { term: "Analogy of the watch", def: "William Paley's argument that just as a watch implies a watchmaker, the complexity of the natural world implies a creator God." },
+    { term: "Cosmological argument", def: "An argument for the existence of God based on the existence of the universe, arguing that everything must have a cause, leading back to a First Cause." },
+    { term: "Cosmos / Cosmology", def: "The universe as a whole; cosmology is the study of its origin and structure." },
+    { term: "First Cause", def: "The idea that something must have caused the universe to exist; used in the cosmological argument to point to God as the uncaused cause." },
+    { term: "Miracle", def: "An event that appears to break the laws of nature, often seen as evidence of God acting in the world." },
+    { term: "Lourdes", def: "A site of Catholic pilgrimage in France, associated with miraculous healings following visions of the Virgin Mary." },
+    { term: "Principle of testimony", def: "The idea that we should generally trust the accounts of witnesses unless we have good reason not to; used in evaluating miracle claims." },
+    { term: "Principle of credulity", def: "The idea that if something seems to be the case, we should believe it unless there is evidence otherwise; applied to religious experiences." },
+    { term: "Natural evil", def: "Suffering caused by natural events such as earthquakes or disease, not by human choice." },
+    { term: "Moral evil", def: "Suffering caused by the free choices and actions of human beings." },
+    { term: "Problem of evil", def: "The challenge to belief in God that asks how an all-powerful, all-loving God can permit evil and suffering to exist." },
+    { term: "Inconsistent triad", def: "The argument that God cannot be omnipotent, omnibenevolent, and allow evil to exist — at least one must be false." },
+    { term: '"Rock of atheism"', def: "A phrase used to describe the problem of evil as the strongest argument against the existence of God." },
+    { term: "Theodicy", def: "An attempt to justify why a good and all-powerful God allows evil and suffering to exist." },
+    { term: "Augustinian theodicy", def: "Augustine's explanation that evil entered the world through the free choice of humans in the Fall; God is not responsible." },
+    { term: "Irenaean theodicy", def: "Irenaeus' argument that God allows suffering so that humans can develop morally and spiritually towards perfection." },
+    { term: '"Soul making"', def: "The idea in the Irenaean theodicy that suffering provides opportunities for the soul to grow and develop virtues." },
+    { term: "Argument from science", def: "The view that scientific discoveries such as the Big Bang and evolution have removed the need to believe in God as an explanation for the universe." },
+    { term: "Big Bang theory", def: "The scientific theory that the universe began around 13.8 billion years ago from a rapid expansion of an extremely dense point." },
+    { term: "Evolution", def: "The scientific theory that species develop and change over time through natural selection; used by some to argue against the need for a creator." },
+    { term: "Revelation", def: "The way in which God makes himself known to humans; can be through scripture, nature, experience, or reason." },
+    { term: "Special revelation", def: "A direct, personal communication from God to an individual or group, such as through visions, miracles, or scripture." },
+    { term: "General revelation", def: "Knowledge of God available to all people through the natural world, reason, or conscience." },
+    { term: "Vision", def: "A religious experience in which someone sees or hears something of divine significance; considered by some to be evidence of God's existence." },
+    { term: "Conscience", def: "The inner sense of right and wrong; some argue that conscience is a form of God's voice within us." },
+    { term: "Verbally inspired", def: "The belief that every word of the Bible was dictated directly by God and is therefore completely accurate." },
+    { term: "Divinely inspired", def: "The belief that the Bible was written by humans under the guidance of God, but expressed in human language and understanding." },
+    { term: "Omnipotent", def: "All-powerful; the belief that God has unlimited power." },
+    { term: "Omnibenevolent", def: "All-loving and all-good; the belief that God is perfectly good." },
+    { term: "Immanent", def: "The idea that God is present and active within the world." },
+    { term: "Transcendent", def: "The idea that God exists beyond and outside of the physical world." },
+    { term: "Personal nature", def: "The idea that God is a being who can relate directly to individual people and be known personally." },
+    { term: "Impersonal nature", def: "The idea that God is more like an ultimate force or power than a personal being." },
+  ],
+
+  "Theme D: Religion, Peace, and Conflict": [
+    { term: "War", def: "Armed conflict between nations or groups; debated by religious traditions in terms of when, if ever, it can be justified." },
+    { term: "Peace", def: "The absence of conflict and violence; a core value in many religious traditions, often seen as a divine gift and human responsibility." },
+    { term: "Justice", def: "Fairness and the upholding of what is right; a key reason given by some religious traditions for engaging in conflict." },
+    { term: "Justified", def: "Having a morally acceptable reason; central to debates about when war or violence can be considered morally acceptable." },
+    { term: "Righteous anger / violence", def: "The idea that anger or force can be morally right when it is a response to genuine injustice." },
+    { term: "The Just War Theory", def: "A set of criteria developed by Christian thinkers to determine when going to war is morally justifiable; includes criteria such as just cause and proportionality." },
+    { term: "Weapons of mass destruction", def: "Weapons capable of killing large numbers of people, such as nuclear, biological, or chemical weapons; widely condemned on moral and religious grounds." },
+    { term: "Nuclear deterrence", def: "The strategy of maintaining nuclear weapons to discourage other nations from launching a nuclear attack." },
+    { term: "Nuclear disarmament", def: "The reduction or elimination of nuclear weapons; supported by many religious groups as part of a commitment to peace." },
+    { term: "The sanctity of life", def: "The belief that all human life is sacred and should not be taken; a key religious argument against war and weapons of mass destruction." },
+    { term: "Protest", def: "A non-violent expression of opposition to a policy or event; supported by many religious traditions as a legitimate way to seek justice." },
+    { term: "Riot", def: "A violent form of public disorder; generally condemned by religious traditions as counterproductive and harmful." },
+    { term: "Civil disobedience", def: "The deliberate, non-violent refusal to obey laws considered unjust; associated with figures such as Gandhi and Martin Luther King Jr." },
+    { term: "Boycott", def: "Refusing to buy from or participate in an organisation as a form of protest; a non-violent tool for seeking social change." },
+    { term: "Holy War", def: "A war believed to be commanded or sanctioned by God; different from the Just War as it is motivated by religious obligation." },
+    { term: "The Crusades", def: "A series of religious wars launched by Christian Europe in the medieval period to reclaim the Holy Land from Muslim rule." },
+    { term: "Plenary indulgence", def: "A Catholic concept offering complete forgiveness of sins; promised to Crusade participants as an incentive to fight." },
+    { term: "Terrorism", def: "The use of violence and intimidation, especially against civilians, to achieve political or ideological goals; condemned by mainstream religious traditions." },
+    { term: "Extremism", def: "Holding beliefs that are far outside the mainstream, often involving the willingness to use violence to achieve ideological goals." },
+    { term: "Radicalisation", def: "The process by which a person adopts increasingly extreme views, potentially leading to violence." },
+    { term: "Jihad", def: "An Islamic concept meaning 'struggle'; the greater jihad refers to personal spiritual struggle, the lesser jihad to armed defence of Islam under strict conditions." },
+    { term: "Parable of the Good Samaritan", def: "A teaching of Jesus in which a Samaritan helps a stranger in need; used to illustrate the duty to love one's neighbour across social boundaries." },
+    { term: "Pacifism", def: "The belief that violence and war are never morally justified and that disputes should always be resolved peacefully." },
+    { term: "Absolute pacifism", def: "The view that violence is wrong in all circumstances, without exception." },
+    { term: "Conditional pacifism", def: "The view that violence is generally wrong but may be acceptable in extreme circumstances, such as self-defence." },
+    { term: "Conscientious objector", def: "A person who refuses to fight in a war on moral or religious grounds." },
+    { term: "Quaker Peace Testimony", def: "The commitment of the Religious Society of Friends (Quakers) to non-violence and the peaceful resolution of all conflict." },
+    { term: "Forgiveness", def: "Choosing not to hold resentment or seek revenge against someone who has caused harm; central to Christian and other religious teachings on reconciliation." },
+    { term: "Reconciliation", def: "The process of restoring broken relationships and building peace after conflict; a key goal of many religious peacemakers." },
+    { term: "The Lord's Prayer", def: "The prayer taught by Jesus, which includes a petition for forgiveness and the forgiveness of others; relevant to Christian teachings on peace." },
+  ],
+
+  "Theme E: Religion, Crime, and Punishment": [
+    { term: "Crime", def: "An action that breaks the law of a country; often also considered morally wrong from a religious perspective." },
+    { term: "Justice", def: "Fairness and ensuring people receive what they deserve; a key principle in both legal systems and religious ethics." },
+    { term: "The criminal justice system", def: "The set of institutions and laws through which a society deals with those who commit crimes, including courts and prisons." },
+    { term: "Hate crime", def: "A crime motivated by prejudice against a person's identity, such as their race, religion, or sexuality." },
+    { term: "Civil disobedience", def: "The deliberate, non-violent breaking of a law considered to be unjust, as a form of protest." },
+    { term: "The Fall", def: "The biblical account of Adam and Eve disobeying God, which Christians believe introduced sin and moral failure into the world." },
+    { term: "Original Sin", def: "The Christian belief that all humans are born with a tendency towards sin as a result of Adam and Eve's disobedience." },
+    { term: "Divided will", def: "The idea, drawn from St Paul, that humans experience a conflict between their desire to do good and their tendency to do wrong." },
+    { term: "Reason", def: "The human capacity to think logically and make moral decisions; seen by many religious traditions as a gift from God to guide behaviour." },
+    { term: "The woman caught in adultery", def: "A Gospel story in which Jesus prevents the stoning of a woman and challenges those without sin to cast the first stone; used to illustrate forgiveness and compassion." },
+    { term: "Retribution", def: "Punishment as a form of justice; the idea that offenders deserve to suffer in proportion to the harm they have caused." },
+    { term: "Deterrence", def: "The aim of punishment to discourage the offender and others from committing further crimes." },
+    { term: "Reformation", def: "The aim of punishment to change an offender's behaviour and help them become a better person." },
+    { term: "Prison / Penal system", def: "The system of prisons and related institutions used to punish and manage those convicted of crimes." },
+    { term: "Prison chaplain", def: "A religious leader who works within a prison, providing spiritual care, counselling, and support to inmates." },
+    { term: "The Paulist prison ministries", def: "A Catholic organisation providing pastoral care, education, and support to prisoners and their families in the United States." },
+    { term: "Penal reform", def: "Efforts to improve the prison system and criminal justice process to make it more humane and effective at reducing reoffending." },
+    { term: "Elizabeth Fry", def: "A 19th-century Quaker reformer who campaigned for improved conditions in prisons, particularly for women; a pioneer of prison reform." },
+    { term: "'Alternatives to violence project'", def: "A programme founded by Quakers that works with prisoners to develop non-violent approaches to conflict resolution." },
+    { term: "The death penalty", def: "The legal execution of a person as punishment for a serious crime; also known as capital punishment." },
+    { term: "Capital punishment", def: "The execution of a person by the state as a punishment for a crime; abolished in the UK in 1969 but still used in some countries." },
+    { term: "Amnesty International", def: "A global human rights organisation that campaigns against the death penalty, torture, and other abuses; not religious but supported by many believers." },
+    { term: "Helen Prejean", def: "A Catholic nun and activist who campaigns against the death penalty in the USA; author of 'Dead Man Walking'." },
+    { term: "European Convention of Human Rights", def: "A legal agreement protecting fundamental rights in Europe, including the right to life; used in arguments against the death penalty." },
+    { term: "Sanctity of life", def: "The belief that all human life is sacred and should not be taken, even as punishment; used in religious arguments against capital punishment." },
+    { term: "Principle of utility", def: "The idea, associated with Utilitarianism, that actions should produce the greatest good for the greatest number; applied in debates about punishment." },
+    { term: "Corporeal punishment", def: "Physical punishment inflicted on a person's body, such as caning; debated on grounds of human dignity and effectiveness." },
+    { term: "Community service", def: "A non-custodial punishment in which offenders carry out unpaid work to benefit the community." },
+    { term: "Forgiveness", def: "Choosing to let go of resentment towards someone who has caused harm; emphasised in Christian and other religious teachings on crime." },
+    { term: "Reconciliation", def: "Restoring broken relationships between offenders, victims, and the community; a goal of restorative justice approaches." },
+  ],
+};
+
+const ALL_UNITS = Object.keys(DATA);
+let selectedUnits = new Set(ALL_UNITS);
+let currentMode = 'match';
+
+function shuffle(a) {
+  const b = [...a];
+  for (let i = b.length-1; i>0; i--) { const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; }
+  return b;
+}
+
+function getItems() {
+  const seen = new Set(), out = [];
+  ALL_UNITS.forEach(u => {
+    if (!selectedUnits.has(u)) return;
+    DATA[u].forEach(item => {
+      if (!seen.has(item.term)) { seen.add(item.term); out.push({...item, unit: u}); }
+    });
+  });
+  return shuffle(out);
+}
+
+function renderChips() {
+  const wrap = document.getElementById('chips');
+  wrap.innerHTML = '';
+  ALL_UNITS.forEach(u => {
+    const chip = document.createElement('button');
+    chip.className = 'chip' + (selectedUnits.has(u) ? ' active' : '');
+    chip.textContent = u;
+    chip.onclick = () => toggleChip(u, chip);
+    wrap.appendChild(chip);
+  });
+}
+
+function toggleChip(u, chip) {
+  if (selectedUnits.has(u)) {
+    if (selectedUnits.size === 1) return;
+    selectedUnits.delete(u); chip.classList.remove('active');
+  } else {
+    selectedUnits.add(u); chip.classList.add('active');
+  }
+  onFilterChange();
+}
+
+function selectAll() {
+  selectedUnits = new Set(ALL_UNITS); renderChips(); onFilterChange();
+}
+
+function onFilterChange() {
+  if (currentMode === 'match') restartMatch();
+  else if (currentMode === 'flash') restartFlash();
+  else restartComplete();
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  ['match','flash','complete'].forEach((m,i) => {
+    document.getElementById('mode-'+m).style.display = m===mode?'':'none';
+    document.querySelectorAll('.mode-btn')[i].classList.toggle('active', m===mode);
+  });
+  onFilterChange();
+}
+
+// ===== MODE 1: MATCH =====
+const BATCH = 6;
+let mPool=[], mBatch=[], mCorrect=0, mWrong=0, mTotal=0, mSelT=null, mSelD=null;
+
+function restartMatch() {
+  mPool = getItems(); mTotal = mPool.length;
+  mCorrect=0; mWrong=0; mSelT=null; mSelD=null;
+  document.getElementById('m-banner').style.display='none';
+  updateMatchScore(); nextMatchBatch();
+}
+
+function nextMatchBatch() {
+  mBatch = mPool.splice(0,BATCH); mSelT=null; mSelD=null; renderMatchBatch();
+}
+
+function renderMatchBatch() {
+  const terms = shuffle([...mBatch]), defs = shuffle([...mBatch]);
+  const tc = document.getElementById('m-terms-col'), dc = document.getElementById('m-defs-col');
+  tc.innerHTML=''; dc.innerHTML='';
+  const bn = Math.ceil((mTotal-mPool.length-mBatch.length+1)/BATCH)||1;
+  const bt = Math.ceil(mTotal/BATCH);
+  document.getElementById('m-batch-label').textContent = `Batch ${bn} of ${bt} — match ${mBatch.length} terms to their definitions`;
+  terms.forEach(item => {
+    const el = document.createElement('div');
+    el.className='card'; el.dataset.term=item.term;
+    const showUnit = selectedUnits.size > 1;
+    el.innerHTML=`<strong>${item.term}</strong>${showUnit?`<div class="unit-tag">${item.unit}</div>`:''}`;
+    el.onclick=()=>clickMatchT(el,item); tc.appendChild(el);
+  });
+  defs.forEach(item => {
+    const el = document.createElement('div');
+    el.className='card'; el.dataset.term=item.term;
+    el.textContent=item.def;
+    el.onclick=()=>clickMatchD(el,item); dc.appendChild(el);
+  });
+  updateMatchScore();
+}
+
+function clickMatchT(el,item) {
+  if(el.classList.contains('correct')||el.classList.contains('locked')) return;
+  document.querySelectorAll('#m-terms-col .card.selected').forEach(c=>c.classList.remove('selected'));
+  mSelT={el,item}; el.classList.add('selected'); tryMatchPair();
+}
+function clickMatchD(el,item) {
+  if(el.classList.contains('correct')||el.classList.contains('locked')) return;
+  document.querySelectorAll('#m-defs-col .card.selected').forEach(c=>c.classList.remove('selected'));
+  mSelD={el,item}; el.classList.add('selected'); tryMatchPair();
+}
+
+function tryMatchPair() {
+  if(!mSelT||!mSelD) return;
+  const {el:tEl,item:tItem}=mSelT, {el:dEl,item:dItem}=mSelD;
+  mSelT=null; mSelD=null;
+  if(tItem.term===dItem.term) {
+    tEl.classList.remove('selected'); tEl.classList.add('correct');
+    dEl.classList.remove('selected'); dEl.classList.add('correct');
+    mCorrect++; updateMatchScore();
+    if(document.querySelectorAll('#m-terms-col .card:not(.correct)').length===0)
+      setTimeout(()=>mPool.length>0?nextMatchBatch():showMatchBanner(),400);
+  } else {
+    mWrong++;
+    [tEl,dEl].forEach(el=>{el.classList.remove('selected');el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),420);});
+    updateMatchScore();
+  }
+}
+
+function updateMatchScore() {
+  document.getElementById('m-correct').textContent=`✓ ${mCorrect}`;
+  document.getElementById('m-wrong').textContent=`✗ ${mWrong}`;
+  document.getElementById('m-remain').textContent=`◈ ${mTotal-mCorrect} left`;
+  document.getElementById('m-prog').style.width=(mTotal>0?mCorrect/mTotal*100:0)+'%';
+}
+
+function showMatchBanner() {
+  const b=document.getElementById('m-banner'); b.style.display='block';
+  const pct=Math.round(mCorrect/(mCorrect+mWrong)*100)||0;
+  document.getElementById('m-banner-title').textContent=pct===100?'Perfect!':pct>=75?'Well done!':'Keep going!';
+  document.getElementById('m-banner-msg').textContent=`${mCorrect} correct · ${mWrong} incorrect · ${pct}% accuracy`;
+}
+
+// ===== MODE 2: FLASHCARDS =====
+let fDeck=[], fIdx=0, fFlipped=false;
+
+function restartFlash() {
+  fDeck=getItems(); fIdx=0; fFlipped=false;
+  document.getElementById('f-done').style.display='none';
+  document.getElementById('f-inner').parentElement.style.display='block';
+  document.querySelector('.flash-nav').style.display='grid';
+  showFlashCard(true);
+}
+
+function showFlashCard(animate) {
+  if(fIdx>=fDeck.length){showFlashDone();return;}
+  const item=fDeck[fIdx];
+  const inner=document.getElementById('f-inner');
+  if(fFlipped){inner.classList.remove('flipped');fFlipped=false;}
+  if(animate){inner.classList.add('slide-up');setTimeout(()=>inner.classList.remove('slide-up'),280);}
+  const showUnit=selectedUnits.size>1;
+  document.getElementById('f-unit').textContent=showUnit?item.unit:'';
+  document.getElementById('f-term').textContent=item.term;
+  document.getElementById('f-def').textContent=item.def;
+  document.getElementById('f-counter').textContent=`${fIdx+1} / ${fDeck.length}`;
+  document.getElementById('f-prog').style.width=((fIdx+1)/fDeck.length*100)+'%';
+}
+
+function flipFlash() {
+  fFlipped=!fFlipped;
+  document.getElementById('f-inner').classList.toggle('flipped',fFlipped);
+}
+
+function nextFlash() { if(fIdx<fDeck.length-1){fIdx++;showFlashCard(true);}else showFlashDone(); }
+function prevFlash() { if(fIdx>0){fIdx--;showFlashCard(true);} }
+
+function showFlashDone() {
+  document.getElementById('f-inner').parentElement.style.display='none';
+  document.querySelector('.flash-nav').style.display='none';
+  document.getElementById('f-done').style.display='block';
+  document.getElementById('f-prog').style.width='100%';
+  document.getElementById('f-counter').textContent=`${fDeck.length} / ${fDeck.length}`;
+  const labels=[...selectedUnits].join(', ');
+  document.getElementById('f-done-sub').textContent=`You've been through all ${fDeck.length} terms for: ${labels}.`;
+}
+
+// ===== MODE 3: GUESS THE TERM =====
+let cPool=[], cIdx=0, cCorrect=0, cWrong=0, cAnswered=false;
+
+function restartComplete() {
+  cPool=getItems(); cIdx=0; cCorrect=0; cWrong=0; cAnswered=false;
+  document.getElementById('c-banner').style.display='none';
+  document.getElementById('c-next').style.display='none';
+  renderCompleteCard();
+}
+
+function renderCompleteCard() {
+  if(cIdx>=cPool.length){showCompleteBanner();return;}
+  cAnswered=false;
+  const item=cPool[cIdx];
+  document.getElementById('c-def').textContent=item.def;
+  document.getElementById('c-counter').textContent=`${cIdx+1} of ${cPool.length}`;
+  document.getElementById('c-prog').style.width=(cIdx/cPool.length*100)+'%';
+  document.getElementById('c-next').style.display='none';
+  const others=shuffle(cPool.filter((_,i)=>i!==cIdx)).slice(0,3).map(o=>o.term);
+  const opts=shuffle([item.term,...others]);
+  const og=document.getElementById('c-options'); og.innerHTML='';
+  opts.forEach(opt=>{
+    const btn=document.createElement('button'); btn.className='option-btn'; btn.textContent=opt;
+    btn.onclick=()=>answerComplete(btn,opt,item.term); og.appendChild(btn);
+  });
+}
+
+function answerComplete(btn,chosen,correct) {
+  if(cAnswered) return; cAnswered=true;
+  document.querySelectorAll('.option-btn').forEach(b=>{
+    b.disabled=true;
+    if(b.textContent===correct) b.classList.add('correct');
+    else if(b===btn&&chosen!==correct) b.classList.add('wrong');
+  });
+  if(chosen===correct) cCorrect++; else cWrong++;
+  document.getElementById('c-next').style.display='inline-block';
+}
+
+function nextComplete() { cIdx++; renderCompleteCard(); }
+
+function showCompleteBanner() {
+  document.getElementById('c-banner').style.display='block';
+  document.getElementById('c-next').style.display='none';
+  document.getElementById('c-prog').style.width='100%';
+  const pct=Math.round(cCorrect/(cCorrect+cWrong)*100)||0;
+  document.getElementById('c-banner-title').textContent=pct===100?'Perfect!':pct>=75?'Well done!':'Keep going!';
+  document.getElementById('c-banner-msg').textContent=`${cCorrect} correct · ${cWrong} incorrect · ${pct}% accuracy`;
+}
+
+// INIT
+renderChips();
+restartMatch();
+restartFlash();
+restartComplete();
+</script>
+</body>
+</html>
