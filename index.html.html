@@ -90,6 +90,8 @@ header span { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.06
 .flash-done { display: none; max-width: 580px; margin: 1.5rem auto 0; text-align: center; padding: 2rem; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
 .flash-done h2 { font-family: var(--serif); font-size: 1.4rem; font-weight: 400; margin-bottom: 0.5rem; }
 .flash-done p { font-size: 13px; color: var(--text-muted); margin-bottom: 1.25rem; }
+.flash-side-row { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 0.9rem; }
+.flash-side-row label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 @keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
 .slide-up { animation: slideUp 0.22s ease; }
 
@@ -157,15 +159,21 @@ header span { font-size: 0.75rem; color: var(--text-muted); letter-spacing: 0.06
       <button class="btn" onclick="restartFlash()">Reshuffle</button>
       <span class="flash-counter" id="f-counter">— / —</span>
     </div>
+    <div class="flash-side-row">
+      <label>Start with:</label>
+      <span class="chip active" id="fs-term" onclick="setFlashSide('term')">Term first</span>
+      <span class="chip" id="fs-def" onclick="setFlashSide('def')">Definition first</span>
+      <span class="chip" id="fs-mixed" onclick="setFlashSide('mixed')">Mixed</span>
+    </div>
     <div class="flash-wrap">
       <div class="flash-inner" id="f-inner" onclick="flipFlash()">
-        <div class="flash-face">
+        <div class="flash-face" id="f-front">
           <div class="flash-unit" id="f-unit"></div>
-          <div class="flash-term" id="f-term"></div>
-          <div class="flash-hint">Tap to reveal definition</div>
+          <div class="flash-term" id="f-front-main"></div>
+          <div class="flash-hint" id="f-front-hint">Tap to reveal definition</div>
         </div>
-        <div class="flash-face flash-back">
-          <div class="flash-def" id="f-def"></div>
+        <div class="flash-face flash-back" id="f-back">
+          <div class="flash-def" id="f-back-main"></div>
           <div class="flash-hint">Tap to flip back</div>
         </div>
       </div>
@@ -755,10 +763,24 @@ function showMatchBanner() {
 }
 
 // ===== MODE 2: FLASHCARDS =====
-let fDeck=[], fIdx=0, fFlipped=false;
+let fDeck=[], fIdx=0, fFlipped=false, fStartSide='term';
+
+function setFlashSide(side) {
+  fStartSide=side;
+  ['term','def','mixed'].forEach(s=>{
+    document.getElementById('fs-'+s).classList.toggle('active',s===side);
+  });
+  // Re-assign termFirst flags when mixed changes
+  if(side==='mixed') fDeck.forEach(item=>item.termFirst=Math.random()>0.5);
+  // Reset to current card without animating
+  fFlipped=false;
+  document.getElementById('f-inner').classList.remove('flipped');
+  showFlashCard(false);
+}
 
 function restartFlash() {
-  fDeck=getItems(); fIdx=0; fFlipped=false;
+  fDeck=getItems().map(item=>({...item, termFirst: Math.random()>0.5}));
+  fIdx=0; fFlipped=false;
   document.getElementById('f-done').style.display='none';
   document.getElementById('f-inner').parentElement.style.display='block';
   document.querySelector('.flash-nav').style.display='grid';
@@ -773,8 +795,29 @@ function showFlashCard(animate) {
   if(animate){inner.classList.add('slide-up');setTimeout(()=>inner.classList.remove('slide-up'),280);}
   const showUnit=selectedUnits.size>1;
   document.getElementById('f-unit').textContent=showUnit?item.unit:'';
-  document.getElementById('f-term').textContent=item.term;
-  document.getElementById('f-def').textContent=item.def;
+
+  // Determine which face shows what
+  const termOnFront = fStartSide==='term' || (fStartSide==='mixed' && item.termFirst);
+  const front=document.getElementById('f-front-main');
+  const back=document.getElementById('f-back-main');
+  const frontHint=document.getElementById('f-front-hint');
+  const frontFace=document.getElementById('f-front');
+  const backFace=document.getElementById('f-back');
+
+  if(termOnFront) {
+    front.className='flash-term'; front.textContent=item.term;
+    back.className='flash-def'; back.textContent=item.def;
+    frontHint.textContent='Tap to reveal definition';
+    frontFace.style.background=''; frontFace.style.borderColor='';
+    backFace.style.background='var(--accent-light)'; backFace.style.borderColor='#a89fdc';
+  } else {
+    front.className='flash-def'; front.textContent=item.def;
+    back.className='flash-term'; back.textContent=item.term;
+    frontHint.textContent='Tap to reveal term';
+    frontFace.style.background='var(--accent-light)'; frontFace.style.borderColor='#a89fdc';
+    backFace.style.background=''; backFace.style.borderColor='';
+  }
+
   document.getElementById('f-counter').textContent=`${fIdx+1} / ${fDeck.length}`;
   document.getElementById('f-prog').style.width=((fIdx+1)/fDeck.length*100)+'%';
 }
